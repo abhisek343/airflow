@@ -90,6 +90,11 @@ Project Id (optional)
     The Google Cloud project ID to connect to. It is used as default project id by operators using it and
     can usually be overridden at the operator level.
 
+Universe Domain (optional)
+    The Google API universe domain to use with this connection. When set, it takes precedence over the
+    process-wide ``GOOGLE_CLOUD_UNIVERSE_DOMAIN`` environment variable. If unset, that environment
+    variable remains the fallback.
+
 Keyfile Path
     Path to a `service account
     <https://cloud.google.com/docs/authentication/#service_accounts>`_ key
