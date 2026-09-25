@@ -865,6 +865,33 @@ class TestGoogleBaseHook:
 
             assert is_default_universe
 
+    def test_get_client_options_with_connection_universe_domain(self):
+        connection_domain = "example.com"
+        global_domain = "global.example.com"
+        self.instance.extras = {"universe_domain": connection_domain}
+
+        with patch.dict(os.environ, {"GOOGLE_CLOUD_UNIVERSE_DOMAIN": global_domain}):
+            client_options = self.instance.get_client_options()
+
+        assert client_options.universe_domain == connection_domain
+        assert client_options.api_endpoint is None
+
+    def test_get_client_options_with_connection_universe_domain_and_api_endpoint_override(self, caplog):
+        connection_domain = "example.com"
+        global_domain = "global.example.com"
+        api_endpoint_override = "test_api_endpoint"
+        self.instance.extras = {"universe_domain": connection_domain}
+
+        with patch.dict(os.environ, {"GOOGLE_CLOUD_UNIVERSE_DOMAIN": global_domain}):
+            client_options = self.instance.get_client_options(api_endpoint_override=api_endpoint_override)
+
+        assert (
+            "Ignoring api_endpoint_override because the universe domain is not Google default universe."
+            in caplog.text
+        )
+        assert client_options.universe_domain == connection_domain
+        assert client_options.api_endpoint is None
+
     def test_get_client_options_default(self):
         with patch.dict(os.environ, {}, clear=True):
             client_options = self.instance.get_client_options()
