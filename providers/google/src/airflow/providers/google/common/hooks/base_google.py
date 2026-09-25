@@ -249,6 +249,7 @@ class GoogleBaseHook(BaseHook):
 
         return {
             "project": StringField(lazy_gettext("Project Id"), widget=BS3TextFieldWidget()),
+            "universe_domain": StringField(lazy_gettext("Universe Domain"), widget=BS3TextFieldWidget()),
             "key_path": StringField(lazy_gettext("Keyfile Path"), widget=BS3TextFieldWidget()),
             "keyfile_dict": PasswordField(lazy_gettext("Keyfile JSON"), widget=BS3PasswordFieldWidget()),
             "credential_config_file": StringField(
@@ -427,12 +428,13 @@ class GoogleBaseHook(BaseHook):
                 "and can contain only lowercase letters, digits, and hyphens."
             )
 
-    @staticmethod
-    def is_default_universe() -> bool:
-        global_universe_domain = os.getenv("GOOGLE_CLOUD_UNIVERSE_DOMAIN", None)
-        if global_universe_domain in ("googleapis.com", "", None):
-            return True
-        return False
+    def _get_universe_domain(self) -> str | None:
+        """Return the universe domain configured for this connection or globally."""
+        return self._get_field("universe_domain", default=os.getenv("GOOGLE_CLOUD_UNIVERSE_DOMAIN"))
+
+    def is_default_universe(self) -> bool:
+        """Return whether this hook uses the default Google API universe."""
+        return self._get_universe_domain() in ("googleapis.com", "", None)
 
     @staticmethod
     def get_high_value_cookie_domain() -> str:
@@ -443,7 +445,7 @@ class GoogleBaseHook(BaseHook):
         api_endpoint_override: str | None = None,
     ) -> ClientOptions:
         """Return the ClientOptions object for Google API."""
-        global_universe_domain = os.getenv("GOOGLE_CLOUD_UNIVERSE_DOMAIN", None)
+        universe_domain = self._get_universe_domain()
 
         if api_endpoint_override:
             if self.is_default_universe():
@@ -453,9 +455,9 @@ class GoogleBaseHook(BaseHook):
             self.log.info(
                 "Ignoring api_endpoint_override because the universe domain is not Google default universe."
             )
-        if global_universe_domain:
+        if universe_domain:
             return ClientOptions(
-                universe_domain=global_universe_domain,
+                universe_domain=universe_domain,
             )
 
         return ClientOptions()
